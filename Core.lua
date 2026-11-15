@@ -3,6 +3,18 @@ EF = EF or {}
 _G.EverFishing = EF
 local DATA = EF.Data
 
+-- ===========================================================================
+-- VERSION DETECTION
+-- ===========================================================================
+-- Forever reports project ID 18 (distinct from Retail's Mainline ID).
+-- The interface number 16001 is a reliable secondary fallback.
+local IS_FOREVER = false
+if WOW_PROJECT_ID == 18 then
+    IS_FOREVER = true
+elseif select(4, GetBuildInfo()) == 16001 then
+    IS_FOREVER = true
+end
+
 local MIN_DOUBLE_CLICK = 0.05
 local lastClickTime = 0
 local pendingClearTimer = nil
@@ -85,6 +97,10 @@ local function IsFishingPoleEquipped()
     return classID == DATA.FISHING_ITEM_CLASS_ID and DATA.FISHING_POLE_SUBCLASS_IDS[subclassID]
 end
 
+-- ---------------------------------------------------------------------------
+-- Spell lookup: Forever removes GetSpellInfo, so we add C_Spell.GetSpellInfo
+-- as a fallback in addition to C_Spell.GetSpellName.
+-- ---------------------------------------------------------------------------
 local function GetFishingSpellName()
     local name
     if C_Spell and C_Spell.GetSpellName then
@@ -92,7 +108,17 @@ local function GetFishingSpellName()
             name = C_Spell.GetSpellName(spellID)
             if name then break end
         end
-    elseif GetSpellInfo then
+    end
+    if not name and C_Spell and C_Spell.GetSpellInfo then
+        for _, spellID in ipairs(DATA.FISHING_SPELL_IDS) do
+            local info = C_Spell.GetSpellInfo(spellID)
+            if info and info.name then
+                name = info.name
+                break
+            end
+        end
+    end
+    if not name and GetSpellInfo then
         for _, spellID in ipairs(DATA.FISHING_SPELL_IDS) do
             name = GetSpellInfo(spellID)
             if name then break end
@@ -194,9 +220,9 @@ local function GetAutoLureID()
         lure = availableLures[#availableLures]
     else
         -- Default to Weakest for both "Weakest" and "Smart" (if not maxed)
-        lure = availableLures[1] 
+        lure = availableLures[1]
     end
-    
+
     return lure and lure.id
 end
 
@@ -259,6 +285,10 @@ local function PrepareCastAction(button)
     button:SetAttribute("spell", not lureID and GetFishingSpellName() or nil)
 end
 
+-- Forward-declare GetMouseFishingStatus so the PreClick closure below
+-- captures the local (not the global, which is nil at this point).
+local GetMouseFishingStatus
+
 autoLureButton:SetScript("PreClick", function(self)
     clickDiagnostics.securePreClicks = clickDiagnostics.securePreClicks + 1
     if InCombatLockdown() then return end
@@ -283,7 +313,6 @@ local function SetFishingPaused(value)
     ClearBinding()
 end
 
-local GetMouseFishingStatus
 GetMouseFishingStatus = function()
     if fishingPaused then return "Fishing is paused. Use /evf resume." end
     if InCombatLockdown() then return "Casting is blocked in combat." end
@@ -337,15 +366,22 @@ function EF.InitializeClickHandling()
         if evt == "LOOT_READY" or evt == "LOOT_OPENED" or evt == "LOOT_CLOSED" then
             lootOpen = evt ~= "LOOT_CLOSED"
             ClearBinding()
-            
-            -- Auto-Loot Logic
+
+            -- -----------------------------------------------------------------
+            -- AUTO-LOOT
+            -- Works on Classic and most Retail builds. On Forever the secure
+            -- loot API is tighter; pcall ensures any restriction simply skips
+            -- auto-loot without breaking the addon. Users can still loot manually.
+            -- -----------------------------------------------------------------
             if evt == "LOOT_OPENED" and EverFishingDB and EverFishingDB.enableAutoLoot then
-                for i = 1, GetNumLootItems() do
-                    LootSlot(i)
-                end
-                CloseLoot()
+                pcall(function()
+                    for i = 1, GetNumLootItems() do
+                        LootSlot(i)
+                    end
+                    CloseLoot()
+                end)
             end
-            
+
             return
         end
         if evt == "PLAYER_REGEN_DISABLED" or evt == "PLAYER_REGEN_ENABLED" then
@@ -466,7 +502,7 @@ local function CreateOptionsPanel()
 
     -- 2. The Divider Rule
     local divider = panel:CreateTexture(nil, "ARTWORK")
-    divider:SetColorTexture(1, 1, 1, 0.15) 
+    divider:SetColorTexture(1, 1, 1, 0.15)
     divider:SetHeight(1)
     divider:SetPoint("TOPLEFT", 16, -42)
     divider:SetPoint("TOPRIGHT", -16, -42)
@@ -492,7 +528,7 @@ local function CreateOptionsPanel()
         local box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
         box:SetSize(width, height)
         box:SetPoint("TOPLEFT", relativeTo, "BOTTOMLEFT", 0, yOffset)
-        
+
         box:SetBackdrop({
             bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -509,11 +545,11 @@ local function CreateOptionsPanel()
         cb:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
         cb.Text:SetFontObject(GameFontHighlight)
         cb.Text:SetText(text)
-        
+
         cb:SetScript("OnShow", function(self) self:SetChecked(getter()) end)
         cb:SetScript("OnClick", function(self)
             setter(self:GetChecked())
-            ClearBinding() 
+            ClearBinding()
         end)
         return cb
     end
@@ -525,14 +561,14 @@ local function CreateOptionsPanel()
     local lureBox = CreateBox(panel, 530, 115, lureHeader, -8)
 
     local autoLureCB = CreateCheckbox(
-        lureBox, "Enable Auto Lure", 
+        lureBox, "Enable Auto Lure",
         function() return EverFishingDB.enableAutoLure end,
         function(v) EverFishingDB.enableAutoLure = v end,
         12, -12
     )
 
     local autoLootCB = CreateCheckbox(
-        lureBox, "Enable Auto-Loot", 
+        lureBox, "Enable Auto-Loot",
         function() return EverFishingDB.enableAutoLoot end,
         function(v) EverFishingDB.enableAutoLoot = v end,
         260, -12
@@ -546,10 +582,10 @@ local function CreateOptionsPanel()
     local strategyDropdown = CreateFrame("Frame", "EverFishingStrategyDropdown", lureBox, "UIDropDownMenuTemplate")
     strategyDropdown:SetPoint("TOPLEFT", strategyLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(strategyDropdown, 150)
-    
+
     UIDropDownMenu_Initialize(strategyDropdown, function(self, level)
-        local options = { 
-            { text = "Smart (Save lures if maxed)", value = "Smart" }, 
+        local options = {
+            { text = "Smart (Save lures if maxed)", value = "Smart" },
             { text = "Weakest Lure First", value = "Weakest" },
             { text = "Strongest Lure First", value = "Strongest" }
         }
@@ -567,7 +603,7 @@ local function CreateOptionsPanel()
         end
     end)
     UIDropDownMenu_SetSelectedValue(strategyDropdown, EverFishingDB.lureStrategy)
-    
+
     local initialText = "Smart (Save lures if maxed)"
     if EverFishingDB.lureStrategy == "Weakest" then initialText = "Weakest Lure First"
     elseif EverFishingDB.lureStrategy == "Strongest" then initialText = "Strongest Lure First" end
@@ -593,7 +629,7 @@ local function CreateOptionsPanel()
     local modeDropdown = CreateFrame("Frame", "EverFishingModeDropdown", mouseInnerBox, "UIDropDownMenuTemplate")
     modeDropdown:SetPoint("TOPLEFT", modeLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(modeDropdown, 130)
-    
+
     UIDropDownMenu_Initialize(modeDropdown, function(self, level)
         local options = { { text = "Single Click", value = "SingleClick" }, { text = "Double Click", value = "DoubleClick" } }
         for _, opt in ipairs(options) do
@@ -619,7 +655,7 @@ local function CreateOptionsPanel()
     local buttonDropdown = CreateFrame("Frame", "EverFishingButtonDropdown", mouseInnerBox, "UIDropDownMenuTemplate")
     buttonDropdown:SetPoint("TOPLEFT", buttonLabel, "BOTTOMLEFT", -16, -2)
     UIDropDownMenu_SetWidth(buttonDropdown, 130)
-    
+
     UIDropDownMenu_Initialize(buttonDropdown, function(self, level)
         for _, opt in ipairs(BUTTON_OPTIONS) do
             local info = UIDropDownMenu_CreateInfo()
@@ -650,18 +686,18 @@ local function CreateOptionsPanel()
     delaySlider:SetMinMaxValues(0.1, 0.8)
     delaySlider:SetValueStep(0.05)
     delaySlider:SetObeyStepOnDrag(true)
-    
+
     _G[delaySlider:GetName() .. "Low"]:SetText("0.1s")
     _G[delaySlider:GetName() .. "High"]:SetText("0.8s")
-    
+
     local sliderLabel = timingInnerBox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     sliderLabel:SetPoint("BOTTOMLEFT", delaySlider, "TOPLEFT", 4, 6)
     sliderLabel:SetText("Double-Click Window")
-    
+
     delaySlider:SetScript("OnShow", function(self)
         self:SetValue(EverFishingDB.doubleClickDelay or 0.4)
     end)
-    
+
     delaySlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor((value + 0.025) * 20 + 0.5) / 20
         EverFishingDB.doubleClickDelay = value
@@ -674,22 +710,41 @@ local function CreateOptionsPanel()
     -- =======================================================================
     local aboutHeader = CreateHeader(panel, "About", castOuterBox, -20)
     local aboutBox = CreateBox(panel, 530, 65, aboutHeader, -8)
-    
+
     local versionText = aboutBox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     versionText:SetPoint("TOPLEFT", aboutBox, "TOPLEFT", 12, -12)
-    versionText:SetText("EverFishing Version 0.1.0")
-    
+    versionText:SetText("EverFishing Version 0.1.1")
+
     local slashText = aboutBox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     slashText:SetPoint("TOPLEFT", versionText, "BOTTOMLEFT", 0, -6)
     slashText:SetText("Type |cffFFFF00/evf|r in chat to see all commands.")
 
-    -- Register the panel with the game's Settings API
-    local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
-    Settings.RegisterAddOnCategory(category)
-    
-    SLASH_EVERFISHINGOPTIONS1 = "/evf options"
-    SlashCmdList["EVERFISHINGOPTIONS"] = function()
-        Settings.OpenToCategory(category:GetID())
+    -- =======================================================================
+    -- Register the panel with the client-appropriate Options API.
+    --
+    --  * Retail 10.0+ / Forever use the modern Settings namespace.
+    --  * Classic Era still uses the legacy InterfaceOptions_AddCategory.
+    -- =======================================================================
+    if Settings and Settings.RegisterCanvasLayoutCategory then
+        -- Modern client (Retail 10.0+, Forever)
+        local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+        Settings.RegisterAddOnCategory(category)
+
+        SLASH_EVERFISHINGOPTIONS1 = "/evf options"
+        SlashCmdList["EVERFISHINGOPTIONS"] = function()
+            Settings.OpenToCategory(category:GetID())
+        end
+    else
+        -- Classic Era fallback
+        InterfaceOptions_AddCategory(panel)
+
+        SLASH_EVERFISHINGOPTIONS1 = "/evf options"
+        SlashCmdList["EVERFISHINGOPTIONS"] = function()
+            -- Classic Era requires the double call: the first opens the
+            -- frame, the second actually selects the panel.
+            InterfaceOptionsFrame_OpenToCategory(panel)
+            InterfaceOptionsFrame_OpenToCategory(panel)
+        end
     end
 end
 
