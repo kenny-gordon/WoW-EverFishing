@@ -26,7 +26,7 @@
 
 ## Installation
 
-1. Download the latest release from the [Releases](link-to-releases) page.
+1. Download the latest release from the [Releases](https://github.com/kenny-gordon/WoW-EverFishing/releases/latest) page.
 2. Extract the `EverFishing` folder into the `Interface/AddOns` directory of the client you play:
 
    ```text
