@@ -22,7 +22,8 @@
 ## Screenshots
 
 *(Add a link to your options panel screenshot here)*
-`![Options Panel](link-to-your-image.png)`
+`![Options Panel](docs/assets/latest.png)
+
 
 ## Installation
 
