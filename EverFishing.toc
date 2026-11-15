@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: EverFishing
+## Notes: Fishing click-to-cast and automatic lures.
+## Category: Ever
+## Author: Ken Gordon
+## Version: 0.1.0
+## IconTexture: Interface\Icons\Ui_profession_fishing
+## SavedVariables: EverFishingDB
+
+Data.lua
+Core.lua
