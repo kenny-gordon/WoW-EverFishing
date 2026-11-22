@@ -15,7 +15,7 @@
   * **Smart Strategy (Default):** If you are at max fishing skill, EverFishing will *not* apply a lure to save you money. If you aren't maxed, it will use your weakest eligible lures first.
   * **Weakest First:** Always uses the lowest-tier lure available.
   * **Strongest First:** Always uses the highest-tier lure available.
-* **Auto-Loot:** Automatically loots the fish and closes the loot window instantly so you can cast again immediately.
+* **Auto-Loot:** While a fishing rod is equipped in your main hand, automatically loots and closes the loot window instantly so you can cast again immediately. Stops when you unequip the rod or switch to another weapon.
 * **Questie-Style Interface:** A native-looking options panel integrated directly into the game's AddOns menu.
 * **Safety First:** Automatically pauses casting if you are in combat, moving, or if the loot window is open.
 
@@ -70,6 +70,10 @@ Type `/evf` or `/everfishing` followed by any of the commands below.
 This project is licensed under the **MIT License**.
 
 You are free to use, copy, modify, merge, publish, and distribute this software. Please see the [LICENSE](LICENSE.txt) file for more details.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## Author
 

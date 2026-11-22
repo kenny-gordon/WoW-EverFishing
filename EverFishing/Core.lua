@@ -373,7 +373,8 @@ function EF.InitializeClickHandling()
             -- loot API is tighter; pcall ensures any restriction simply skips
             -- auto-loot without breaking the addon. Users can still loot manually.
             -- -----------------------------------------------------------------
-            if evt == "LOOT_OPENED" and EverFishingDB and EverFishingDB.enableAutoLoot then
+            if evt == "LOOT_OPENED" and EverFishingDB and EverFishingDB.enableAutoLoot
+                and IsFishingPoleEquipped() then
                 pcall(function()
                     for i = 1, GetNumLootItems() do
                         LootSlot(i)
