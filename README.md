@@ -1,7 +1,7 @@
 
 # EverFishing
 
-![WoW](https://img.shields.io/badge/WoW-Retail%20%7C%20Classic%20%7C%20Forever-orange.svg) ![Version](https://img.shields.io/badge/version-0.1.1-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![WoW](https://img.shields.io/badge/WoW-Retail%20%7C%20Classic%20%7C%20Forever-orange.svg) ![Version](https://img.shields.io/badge/version-0.1.2-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 **EverFishing** is a lightweight, fully-featured fishing companion for World of Warcraft — Retail, Classic, and Forever. It removes the friction from fishing by handling casting, luring, and looting automatically, letting you focus on your chat or your favorite podcast.
 
@@ -79,6 +79,6 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 **Ken Gordon**
 
-* Version: 0.1.1
+* Version: 0.1.2
 
 * Feel free to open an issue or submit a pull request if you have suggestions or find bugs.

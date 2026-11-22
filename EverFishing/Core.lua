@@ -714,7 +714,7 @@ local function CreateOptionsPanel()
 
     local versionText = aboutBox:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     versionText:SetPoint("TOPLEFT", aboutBox, "TOPLEFT", 12, -12)
-    versionText:SetText("EverFishing Version 0.1.1")
+    versionText:SetText("EverFishing Version 0.1.2")
 
     local slashText = aboutBox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     slashText:SetPoint("TOPLEFT", versionText, "BOTTOMLEFT", 0, -6)

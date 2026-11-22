@@ -3,7 +3,7 @@
 ## Notes: Fishing click-to-cast and automatic lures.
 ## Category: Ever
 ## Author: Ken Gordon
-## Version: 0.1.1
+## Version: 0.1.2
 ## IconTexture: Interface\Icons\Ui_profession_fishing
 ## SavedVariables: EverFishingDB
 
