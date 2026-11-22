@@ -39,6 +39,20 @@ Use whichever folder your Forever installation uses.
 3. Restart the game or type `/reload` in chat.
 4. Ensure “EverFishing” is checked in your AddOn List on the character selection screen.
 
+## Building a release ZIP
+
+From a Git checkout, run this with Windows PowerShell 5.1 or PowerShell 7:
+
+```powershell
+.\build.ps1
+```
+
+The builder creates `dist\EverFishing-<version>.zip`, ready to attach to a GitHub release. All client TOC files and their referenced files must be tracked, and their versions must agree. The ZIP contains the `EverFishing` folder, its tracked addon files, README, changelog, and license; Git metadata and untracked files are excluded.
+
+Tracked files are packaged from the working tree, including uncommitted edits. Stage any new addon files with `git add` before building. Use `.\build.ps1 -Force` to replace an existing ZIP.
+
+Run `.\tests\build-zip.ps1` to test the builder.
+
 ## Configuration
 
 You can access the settings in two ways:
